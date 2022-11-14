@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+}
+
+group 'nl.hanze.stakem'
+version '1.0-SNAPSHOT'
+
+application {
+    mainClassName = 'nl.hanze.stakem.StakemNode'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.simtechdata:WaifUPnP:1.0'
+    implementation 'com.google.code.gson:gson:2.10'
+}
