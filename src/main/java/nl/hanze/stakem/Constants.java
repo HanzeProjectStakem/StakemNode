@@ -5,7 +5,7 @@ public class Constants {
     private Constants() {}
 
     // TODO: move these values to a config files
-    public static final int DEFAULT_PORT = 64726;
+    public static final int DEFAULT_PORT = 64722;
 
     // For when DEFAULT_PORT is in use
     public static final int RANDOM_PORT_RANGE_START = 49152;

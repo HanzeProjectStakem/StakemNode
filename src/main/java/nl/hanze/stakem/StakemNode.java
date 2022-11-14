@@ -24,30 +24,34 @@ public class StakemNode {
 
         Scanner scanner = new Scanner(System.in);
         while (true) {
-            String input = scanner.nextLine();
-            String commandStr = input.split(" ")[0];
-            int argsLength = input.split(" ").length - 1;
+            try {
+                String input = scanner.nextLine();
+                String commandStr = input.split(" ")[0];
+                int argsLength = input.split(" ").length - 1;
 
-            switch (commandStr) {
-                case "list" -> {
-                    System.out.println("Clients:");
-                    for (Client client : server.getClients()) {
-                        System.out.println(client);
+                switch (commandStr) {
+                    case "list" -> {
+                        System.out.println("Clients:");
+                        for (Client client : server.getClients()) {
+                            System.out.println(client);
+                        }
                     }
-                }
-                default -> {
-                    Command command = CommandFactory.getCommand(commandStr);
+                    default -> {
+                        Command command = CommandFactory.getCommand(commandStr);
 
-                    for (Client client : server.getClients()) {
-                        if (argsLength > 0) {
-                            List<String> cmdArgs = List.of(input.substring(commandStr.length() + 1));
+                        for (Client client : server.getClients()) {
+                            if (argsLength > 0) {
+                                List<String> cmdArgs = List.of(input.substring(commandStr.length() + 1));
 
-                            client.sendCommand(command, cmdArgs);
-                        } else {
-                            client.sendCommand(command);
+                                client.sendCommand(command, cmdArgs);
+                            } else {
+                                client.sendCommand(command);
+                            }
                         }
                     }
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
