@@ -45,7 +45,7 @@ public class Server {
             new Thread(this::listen).start();
             contactRootNode();
             System.out.println("Started a node at port " + port);
-        } catch (ConnectException e) {
+        } catch (ConnectException | BindException e) {
             System.out.println("Port " + port + " is in use, retrying with a different port...");
             port = random.nextInt(Constants.RANDOM_PORT_RANGE_START, Constants.RANDOM_PORT_RANGE_END);
             start();
