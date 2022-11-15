@@ -97,13 +97,19 @@ public class Server {
     }
 
     public void addClient(InetSocketAddress address) {
-        clients.put(address, new Client(this, address));
+        if (!clients.containsKey(address)) {
+            clients.put(address, new Client(this, address));
+        }
     }
 
     public Client createAndAddClient(InetSocketAddress address) {
-        Client client = new Client(this, address);
-        clients.put(address, client);
-        return client;
+        if (!clients.containsKey(address)) {
+            Client client = new Client(this, address);
+            clients.put(address, client);
+            return client;
+        } else {
+            return clients.get(address);
+        }
     }
 
     public Collection<Client> getClients() {

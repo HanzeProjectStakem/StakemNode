@@ -37,7 +37,7 @@ public class RegisterCommand implements Command {
         String hostname = address.getHostName();
 
         // Fix for when hosting nodes on the same network
-        if (hostname.equals("192.168.1.1")) {
+        if (hostname.contains("192.168.")) {
             hostname = clientSocket.getLocalAddress().getHostAddress();
         }
 

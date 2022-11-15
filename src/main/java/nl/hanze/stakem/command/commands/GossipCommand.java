@@ -34,7 +34,7 @@ public class GossipCommand implements Command {
         String hostname = address.getHostName();
 
         // Fix for when hosting nodes on the same network
-        if (hostname.equals("192.168.1.1")) {
+        if (hostname.contains("192.168.")) {
             hostname = clientSocket.getLocalAddress().getHostAddress();
         }
 
@@ -73,8 +73,9 @@ public class GossipCommand implements Command {
                 String[] split = entry.split(":");
                 String hostname = split[0];
                 int port = Integer.parseInt(split[1]);
+                InetSocketAddress socketAddress = new InetSocketAddress(hostname, port);
 
-                server.addClient(new InetSocketAddress(hostname, port));
+                server.addClient(socketAddress);
                 System.out.println(hostname + ":" + port);
             }
         }
