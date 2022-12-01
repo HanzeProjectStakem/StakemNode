@@ -11,6 +11,12 @@ application {
     mainClassName = 'nl.hanze.stakem.StakemNode'
 }
 
+jar {
+    manifest {
+        attributes 'Main-Class': 'nl.hanze.stakem.StakemNode'
+    }
+}
+
 repositories {
     mavenCentral()
 }
