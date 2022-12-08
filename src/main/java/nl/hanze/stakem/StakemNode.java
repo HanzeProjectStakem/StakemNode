@@ -1,6 +1,7 @@
 package nl.hanze.stakem;
 
 import nl.hanze.stakem.command.Command;
+import nl.hanze.stakem.event.EventManager;
 import nl.hanze.stakem.net.Client;
 import nl.hanze.stakem.net.Server;
 
@@ -19,6 +20,7 @@ public class StakemNode {
             System.out.println("Starting as normal node...");
         }
 
+        registerListeners();
         server.start();
 
         Scanner scanner = new Scanner(System.in);
@@ -53,5 +55,11 @@ public class StakemNode {
                 e.printStackTrace();
             }
         }
+    }
+
+    private static void registerListeners() {
+        EventManager manager = EventManager.getInstance();
+
+
     }
 }

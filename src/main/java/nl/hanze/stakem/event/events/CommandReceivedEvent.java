@@ -1,17 +1,25 @@
 package nl.hanze.stakem.event.events;
 
-import nl.hanze.stakem.command.Command;
+import nl.hanze.stakem.command.CommandBody;
 import nl.hanze.stakem.event.Event;
 
-public class CommandReceivedEvent implements Event {
+import java.net.DatagramPacket;
 
-    private final Command command;
+public abstract class CommandReceivedEvent implements Event {
 
-    public CommandReceivedEvent(Command command) {
-        this.command = command;
+    private final CommandBody commandBody;
+    private final DatagramPacket packet;
+
+    public CommandReceivedEvent(CommandBody commandBody, DatagramPacket packet) {
+        this.commandBody = commandBody;
+        this.packet = packet;
     }
 
-    public Command getCommand() {
-        return command;
+    public CommandBody getCommandBody() {
+        return commandBody;
+    }
+
+    public DatagramPacket getPacket() {
+        return packet;
     }
 }

@@ -5,7 +5,9 @@ import com.simtechdata.waifupnp.UPnP;
 import nl.hanze.stakem.Constants;
 import nl.hanze.stakem.command.Command;
 import nl.hanze.stakem.command.CommandBody;
-import nl.hanze.stakem.command.CommandHandler;
+import nl.hanze.stakem.event.EventManager;
+import nl.hanze.stakem.event.events.CommandReceivedEvent;
+import nl.hanze.stakem.event.events.EventFactory;
 
 import java.net.*;
 import java.util.*;
@@ -18,8 +20,8 @@ public class Server {
     private final Random random = new Random();
     private boolean isStopping = false;
     private NodeState state = NodeState.STARTING;
-
     private final Map<InetSocketAddress, Client> clients = new HashMap<>();
+    private Deque<DatagramPacket> packetQueue = new ArrayDeque<>();
 
     public Server(int port) {
         this.port = port;
@@ -46,6 +48,7 @@ public class Server {
 
             addShutdownHook();
             new Thread(this::listen).start();
+            new Thread(this::startQueueProcessThread).start();
 
             if (!isRootNode) {
                 contactRootNode();
@@ -60,6 +63,33 @@ public class Server {
             start();
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void startQueueProcessThread() {
+        ObjectMapper mapper = new ObjectMapper();
+
+        while (!isStopping) {
+            try {
+                if (!packetQueue.isEmpty()) {
+                    DatagramPacket packet = packetQueue.pop();
+                    String jsonString = new String(packet.getData(), 0, packet.getLength());
+                    CommandBody commandBody = mapper.readValue(jsonString, CommandBody.class);
+
+                    if (!commandBody.getVersion().equals(Constants.VERSION)) {
+                        System.out.println("Received a command with an incompatible version, ignoring...");
+                        continue;
+                    }
+
+                    CommandReceivedEvent event = EventFactory.getEvent(commandBody, packet);
+
+                    EventManager.getInstance().callEvent(event);
+                } else {
+                    Thread.sleep(100);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -78,16 +108,14 @@ public class Server {
     }
 
     public void listen() {
-        byte[] buffer = new byte[256];
+        byte[] buffer = new byte[1024];
 
         while (!isStopping) {
             try {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 serverSocket.receive(packet);
 
-                CommandHandler handler = new CommandHandler(this, packet);
-
-                handler.handle();
+                packetQueue.add(packet);
             } catch (Exception e) {
                 e.printStackTrace();
             }
