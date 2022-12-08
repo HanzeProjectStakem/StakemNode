@@ -4,6 +4,8 @@ public class Constants {
 
     private Constants() {}
 
+    public static final String VERSION = "0.1";
+
     // TODO: move these values to a config files
     public static final int DEFAULT_PORT = 64722;
 

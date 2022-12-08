@@ -1,7 +1,6 @@
 package nl.hanze.stakem;
 
 import nl.hanze.stakem.command.Command;
-import nl.hanze.stakem.command.CommandFactory;
 import nl.hanze.stakem.net.Client;
 import nl.hanze.stakem.net.Server;
 
