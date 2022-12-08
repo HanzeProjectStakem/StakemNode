@@ -1,8 +1,10 @@
 package nl.hanze.stakem.net;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simtechdata.waifupnp.UPnP;
 import nl.hanze.stakem.Constants;
-import nl.hanze.stakem.command.CommandFactory;
+import nl.hanze.stakem.command.Command;
+import nl.hanze.stakem.command.CommandBody;
 import nl.hanze.stakem.command.CommandHandler;
 
 import java.net.*;
@@ -11,10 +13,11 @@ import java.util.*;
 public class Server {
 
     private int port;
-    private ServerSocket serverSocket;
+    private DatagramSocket serverSocket;
     private boolean isRootNode = false;
     private final Random random = new Random();
     private boolean isStopping = false;
+    private NodeState state = NodeState.STARTING;
 
     private final Map<InetSocketAddress, Client> clients = new HashMap<>();
 
@@ -31,19 +34,25 @@ public class Server {
         try {
             boolean uPnPAvailable = UPnP.isUPnPAvailable();
 
-            if (uPnPAvailable && UPnP.isMappedTCP(port)) {
+            if (uPnPAvailable && UPnP.isMappedUDP(port)) {
                 throw new ConnectException("Port is already mapped");
             }
 
-            serverSocket = new ServerSocket(port);
+            serverSocket = new DatagramSocket(port);
 
             if (uPnPAvailable) {
-                UPnP.openPortTCP(port);
+                UPnP.openPortUDP(port);
             }
 
             addShutdownHook();
             new Thread(this::listen).start();
-            contactRootNode();
+
+            if (!isRootNode) {
+                contactRootNode();
+            } else {
+                synchronizeBlockchain();
+            }
+
             System.out.println("Started a node at port " + port);
         } catch (ConnectException | BindException e) {
             System.out.println("Port " + port + " is in use, retrying with a different port...");
@@ -54,27 +63,29 @@ public class Server {
         }
     }
 
+    private void synchronizeBlockchain() {
+        state = NodeState.SYNCING;
+
+
+        state = NodeState.READY;
+    }
+
     private void contactRootNode() {
-        if (isRootNode) {
-            return;
-        }
+        state = NodeState.STARTING;
 
-        Client client = createAndAddClient(new InetSocketAddress(Constants.ROOT_NODE_HOSTNAME, Constants.ROOT_NODE_PORT));
 
-        try {
-            client.sendCommand(CommandFactory.getCommand("register"));
-        } catch (Exception e) {
-            System.out.println("Failed to contact root node! Exiting...");
-            e.printStackTrace();
-            System.exit(1);
-        }
+        synchronizeBlockchain();
     }
 
     public void listen() {
+        byte[] buffer = new byte[256];
+
         while (!isStopping) {
             try {
-                Socket socket = serverSocket.accept();
-                CommandHandler handler = new CommandHandler(this, socket);
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                serverSocket.receive(packet);
+
+                CommandHandler handler = new CommandHandler(this, packet);
 
                 handler.handle();
             } catch (Exception e) {
@@ -126,5 +137,23 @@ public class Server {
 
     public int getPort() {
         return port;
+    }
+
+    public NodeState getState() {
+        return state;
+    }
+
+    public void sendCommand(Command command, InetSocketAddress address) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            CommandBody body = new CommandBody(command);
+            byte[] payload = mapper.writeValueAsBytes(body);
+
+            DatagramPacket packet = new DatagramPacket(payload, payload.length, address);
+            serverSocket.send(packet);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
     }
 }
