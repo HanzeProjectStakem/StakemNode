@@ -1,11 +1,12 @@
 package nl.hanze.stakem;
 
-import nl.hanze.stakem.command.Command;
 import nl.hanze.stakem.event.EventManager;
+import nl.hanze.stakem.event.events.ClientRegisterEvent;
+import nl.hanze.stakem.event.events.GossipEvent;
 import nl.hanze.stakem.event.events.PingEvent;
 import nl.hanze.stakem.event.events.PongEvent;
-import nl.hanze.stakem.listeners.PingListener;
-import nl.hanze.stakem.listeners.PongListener;
+import nl.hanze.stakem.listeners.*;
+import nl.hanze.stakem.message.Message;
 import nl.hanze.stakem.net.Client;
 import nl.hanze.stakem.net.Server;
 
@@ -31,10 +32,10 @@ public class StakemNode {
         while (true) {
             try {
                 String input = scanner.nextLine();
-                String commandStr = input.split(" ")[0];
+                String messageStr = input.split(" ")[0];
                 int argsLength = input.split(" ").length - 1;
 
-                switch (commandStr) {
+                switch (messageStr) {
                     case "list" -> {
                         System.out.println("Clients:");
                         for (Client client : server.getClients()) {
@@ -44,14 +45,14 @@ public class StakemNode {
                     default -> {
                         for (Client client : server.getClients()) {
                             if (argsLength > 0) {
-                                List<String> cmdArgs = List.of(input.substring(commandStr.length() + 1));
-                                Command command = CommandFactory.getCommand(commandStr, cmdArgs);
+                                List<String> messageArgs = List.of(input.substring(messageStr.length() + 1));
+                                Message message = MessageFactory.getMessage(messageStr, messageArgs);
 
-                                client.sendCommand(command);
+                                client.sendMessage(message);
                             } else {
-                                Command command = CommandFactory.getCommand(commandStr);
+                                Message message = MessageFactory.getMessage(messageStr);
 
-                                client.sendCommand(command);
+                                client.sendMessage(message);
                             }
                         }
                     }
@@ -67,5 +68,8 @@ public class StakemNode {
 
         manager.registerListener(new PingListener(), PingEvent.class);
         manager.registerListener(new PongListener(), PongEvent.class);
+        manager.registerListener(new ClientRegisterListener(), ClientRegisterEvent.class);
+        manager.registerListener(new GossipListener(), GossipEvent.class);
+        manager.registerListener(new GossipResultListener(), GossipEvent.class);
     }
 }

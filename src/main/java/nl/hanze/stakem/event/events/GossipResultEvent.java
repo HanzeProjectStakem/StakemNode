@@ -5,9 +5,9 @@ import nl.hanze.stakem.net.Server;
 
 import java.net.DatagramPacket;
 
-public class PingEvent extends MessageReceivedEvent {
+public class GossipResultEvent extends MessageReceivedEvent {
 
-    public PingEvent(Server server, MessageBody messageBody, DatagramPacket packet) {
+    public GossipResultEvent(Server server, MessageBody messageBody, DatagramPacket packet) {
         super(server, messageBody, packet);
     }
 }

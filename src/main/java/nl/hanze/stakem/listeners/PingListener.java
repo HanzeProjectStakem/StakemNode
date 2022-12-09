@@ -1,10 +1,10 @@
 package nl.hanze.stakem.listeners;
 
-import nl.hanze.stakem.command.Command;
-import nl.hanze.stakem.command.commands.PongCommand;
 import nl.hanze.stakem.event.Event;
 import nl.hanze.stakem.event.Listener;
 import nl.hanze.stakem.event.events.PingEvent;
+import nl.hanze.stakem.message.Message;
+import nl.hanze.stakem.message.messages.PongMessage;
 import nl.hanze.stakem.net.Client;
 
 import java.net.DatagramPacket;
@@ -20,7 +20,7 @@ public class PingListener implements Listener {
         Client client = pingEvent.getServer().getClient(address);
 
         System.out.println("Received ping from " + packet.getAddress().getHostAddress() + ":" + packet.getPort());
-        Command command = new PongCommand();
-        client.sendCommand(command);
+        Message message = new PongMessage();
+        client.sendMessage(message);
     }
 }

@@ -1,6 +1,6 @@
 package nl.hanze.stakem.net;
 
-import nl.hanze.stakem.command.Command;
+import nl.hanze.stakem.message.Message;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -20,8 +20,8 @@ public class Client {
         return address;
     }
 
-    public void sendCommand(Command command) {
-        server.sendCommand(command, address);
+    public void sendMessage(Message message) {
+        server.sendMessage(message, address);
     }
 
     public DatagramSocket connect() throws IOException {

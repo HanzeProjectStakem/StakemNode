@@ -3,11 +3,11 @@ package nl.hanze.stakem.net;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simtechdata.waifupnp.UPnP;
 import nl.hanze.stakem.Constants;
-import nl.hanze.stakem.command.Command;
-import nl.hanze.stakem.command.CommandBody;
 import nl.hanze.stakem.event.Event;
 import nl.hanze.stakem.event.EventFactory;
 import nl.hanze.stakem.event.EventManager;
+import nl.hanze.stakem.message.Message;
+import nl.hanze.stakem.message.MessageBody;
 
 import java.net.*;
 import java.util.*;
@@ -75,17 +75,16 @@ public class Server {
                     DatagramPacket packet = packetQueue.pop();
                     String jsonString = new String(packet.getData(), 0, packet.getLength());
                     System.out.println("Received message: " + jsonString);
-                    CommandBody commandBody = mapper.readValue(jsonString, CommandBody.class);
+                    MessageBody messageBody = mapper.readValue(jsonString, MessageBody.class);
 
-                    if (!commandBody.getVersion().equals(Constants.VERSION)) {
-                        System.out.println("Received a command with an incompatible version, ignoring...");
+                    if (!messageBody.getVersion().equals(Constants.VERSION)) {
+                        System.out.println("Received a message with an incompatible version, ignoring...");
                         continue;
                     }
 
-                    Event event = EventFactory.getEvent(commandBody, packet);
+                    Event event = EventFactory.getEvent(messageBody, packet);
 
                     EventManager.getInstance().dispatchEvent(event);
-                    addClient((InetSocketAddress) packet.getSocketAddress());
                 } else {
                     Thread.sleep(100);
                 }
@@ -177,10 +176,10 @@ public class Server {
         return state;
     }
 
-    public void sendCommand(Command command, InetSocketAddress address) {
+    public void sendMessage(Message message, InetSocketAddress address) {
         try {
             ObjectMapper mapper = new ObjectMapper();
-            CommandBody body = new CommandBody(command);
+            MessageBody body = new MessageBody(message, this);
             byte[] payload = mapper.writeValueAsBytes(body);
 
             DatagramPacket packet = new DatagramPacket(payload, payload.length, address);
