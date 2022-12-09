@@ -5,22 +5,22 @@ import com.simtechdata.waifupnp.UPnP;
 import nl.hanze.stakem.Constants;
 import nl.hanze.stakem.command.Command;
 import nl.hanze.stakem.command.CommandBody;
+import nl.hanze.stakem.event.Event;
+import nl.hanze.stakem.event.EventFactory;
 import nl.hanze.stakem.event.EventManager;
-import nl.hanze.stakem.event.events.CommandReceivedEvent;
-import nl.hanze.stakem.event.events.EventFactory;
 
 import java.net.*;
 import java.util.*;
 
 public class Server {
 
+    private final Random random = new Random();
+    private final Map<InetSocketAddress, Client> clients = new HashMap<>();
     private int port;
     private DatagramSocket serverSocket;
     private boolean isRootNode = false;
-    private final Random random = new Random();
     private boolean isStopping = false;
     private NodeState state = NodeState.STARTING;
-    private final Map<InetSocketAddress, Client> clients = new HashMap<>();
     private Deque<DatagramPacket> packetQueue = new ArrayDeque<>();
 
     public Server(int port) {
@@ -74,6 +74,7 @@ public class Server {
                 if (!packetQueue.isEmpty()) {
                     DatagramPacket packet = packetQueue.pop();
                     String jsonString = new String(packet.getData(), 0, packet.getLength());
+                    System.out.println("Received message: " + jsonString);
                     CommandBody commandBody = mapper.readValue(jsonString, CommandBody.class);
 
                     if (!commandBody.getVersion().equals(Constants.VERSION)) {
@@ -81,9 +82,10 @@ public class Server {
                         continue;
                     }
 
-                    CommandReceivedEvent event = EventFactory.getEvent(commandBody, packet);
+                    Event event = EventFactory.getEvent(commandBody, packet);
 
-                    EventManager.getInstance().callEvent(event);
+                    EventManager.getInstance().dispatchEvent(event);
+                    addClient((InetSocketAddress) packet.getSocketAddress());
                 } else {
                     Thread.sleep(100);
                 }
@@ -149,6 +151,10 @@ public class Server {
         } else {
             return clients.get(address);
         }
+    }
+
+    public Client getClient(InetSocketAddress address) {
+        return clients.get(address);
     }
 
     public Collection<Client> getClients() {

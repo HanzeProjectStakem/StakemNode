@@ -2,15 +2,9 @@ package nl.hanze.stakem.net;
 
 import nl.hanze.stakem.command.Command;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Client {
 
@@ -27,11 +21,7 @@ public class Client {
     }
 
     public void sendCommand(Command command) {
-        sendCommand(command, new ArrayList<>());
-    }
-
-    public void sendCommand(Command command, List<String> args) {
-
+        server.sendCommand(command, address);
     }
 
     public DatagramSocket connect() throws IOException {

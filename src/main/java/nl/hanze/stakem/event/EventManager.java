@@ -4,10 +4,11 @@ import java.util.*;
 
 public class EventManager {
 
-    private final Map<Class<? extends Event>, List<Listener>> listeners = new HashMap<>();
     private static EventManager instance;
+    private final Map<Class<? extends Event>, List<Listener>> listeners = new HashMap<>();
 
-    private EventManager() {}
+    private EventManager() {
+    }
 
     public static EventManager getInstance() {
         if (instance == null) {
@@ -25,7 +26,7 @@ public class EventManager {
         }
     }
 
-    public void callEvent(Event event) {
+    public void dispatchEvent(Event event) {
         if (!listeners.containsKey(event.getClass())) {
             throw new IllegalArgumentException("Unknown event");
         }

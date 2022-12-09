@@ -2,6 +2,10 @@ package nl.hanze.stakem;
 
 import nl.hanze.stakem.command.Command;
 import nl.hanze.stakem.event.EventManager;
+import nl.hanze.stakem.event.events.PingEvent;
+import nl.hanze.stakem.event.events.PongEvent;
+import nl.hanze.stakem.listeners.PingListener;
+import nl.hanze.stakem.listeners.PongListener;
 import nl.hanze.stakem.net.Client;
 import nl.hanze.stakem.net.Server;
 
@@ -38,14 +42,15 @@ public class StakemNode {
                         }
                     }
                     default -> {
-                        Command command = CommandFactory.getCommand(commandStr);
-
                         for (Client client : server.getClients()) {
                             if (argsLength > 0) {
                                 List<String> cmdArgs = List.of(input.substring(commandStr.length() + 1));
+                                Command command = CommandFactory.getCommand(commandStr, cmdArgs);
 
-                                client.sendCommand(command, cmdArgs);
+                                client.sendCommand(command);
                             } else {
+                                Command command = CommandFactory.getCommand(commandStr);
+
                                 client.sendCommand(command);
                             }
                         }
@@ -60,6 +65,7 @@ public class StakemNode {
     private static void registerListeners() {
         EventManager manager = EventManager.getInstance();
 
-
+        manager.registerListener(new PingListener(), PingEvent.class);
+        manager.registerListener(new PongListener(), PongEvent.class);
     }
 }
