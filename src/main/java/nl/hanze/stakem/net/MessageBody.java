@@ -1,7 +1,6 @@
-package nl.hanze.stakem.message;
+package nl.hanze.stakem.net;
 
 import nl.hanze.stakem.Constants;
-import nl.hanze.stakem.net.Server;
 
 import java.time.Instant;
 
@@ -15,11 +14,25 @@ public class MessageBody {
 
     private Message message;
 
+    public MessageBody() {
+        this.version = Constants.VERSION;
+        this.serverPort = -1;
+        this.timestamp = Instant.now().toEpochMilli();
+        this.message = null;
+    }
+
     public MessageBody(Message message, Server server) {
         this.version = Constants.VERSION;
         this.message = message;
         this.timestamp = Instant.now().toEpochMilli();
         this.serverPort = server.getPort();
+    }
+
+    public MessageBody(String version, int serverPort, Long timestamp, Message message) {
+        this.version = version;
+        this.serverPort = serverPort;
+        this.timestamp = timestamp;
+        this.message = message;
     }
 
     public String getVersion() {

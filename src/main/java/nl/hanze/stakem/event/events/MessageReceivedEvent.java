@@ -1,7 +1,7 @@
 package nl.hanze.stakem.event.events;
 
 import nl.hanze.stakem.event.Event;
-import nl.hanze.stakem.message.MessageBody;
+import nl.hanze.stakem.net.MessageBody;
 import nl.hanze.stakem.net.Server;
 
 import java.net.DatagramPacket;

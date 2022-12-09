@@ -1,9 +1,10 @@
 package nl.hanze.stakem.event;
 
-import nl.hanze.stakem.event.events.PingEvent;
-import nl.hanze.stakem.message.Message;
-import nl.hanze.stakem.message.MessageBody;
-import nl.hanze.stakem.message.messages.PingMessage;
+import nl.hanze.stakem.event.events.*;
+import nl.hanze.stakem.net.Message;
+import nl.hanze.stakem.net.MessageBody;
+import nl.hanze.stakem.net.Server;
+import nl.hanze.stakem.net.messages.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.net.DatagramPacket;
@@ -12,10 +13,14 @@ import java.util.Map;
 public class EventFactory {
 
     private static final Map<Class<? extends Message>, Class<? extends Event>> messageEvents = Map.of(
-            PingMessage.class, PingEvent.class
+            PingMessage.class, PingEvent.class,
+            PongMessage.class, PongEvent.class,
+            RegisterMessage.class, ClientRegisterEvent.class,
+            GossipMessage.class, GossipEvent.class,
+            GossipResultMessage.class, GossipResultEvent.class
     );
 
-    public static Event getEvent(MessageBody messageBody, DatagramPacket packet) {
+    public static Event getEvent(Server server, MessageBody messageBody, DatagramPacket packet) {
         Message message = messageBody.getMessage();
         Class<? extends Event> eventClass = messageEvents.get(message.getClass());
 
@@ -24,9 +29,9 @@ public class EventFactory {
         }
 
         try {
-            return eventClass.getConstructor(MessageBody.class, DatagramPacket.class).newInstance(messageBody, packet);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException e) {
+            return eventClass.getConstructor(Server.class, MessageBody.class, DatagramPacket.class)
+                    .newInstance(server, messageBody, packet);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException("Could not instantiate event class " + eventClass.getName(), e);
         }
     }

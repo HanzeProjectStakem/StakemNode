@@ -1,10 +1,10 @@
 package nl.hanze.stakem;
 
-import nl.hanze.stakem.message.Message;
-import nl.hanze.stakem.message.messages.GossipMessage;
-import nl.hanze.stakem.message.messages.PingMessage;
-import nl.hanze.stakem.message.messages.PongMessage;
-import nl.hanze.stakem.message.messages.RegisterMessage;
+import nl.hanze.stakem.net.Message;
+import nl.hanze.stakem.net.messages.GossipMessage;
+import nl.hanze.stakem.net.messages.PingMessage;
+import nl.hanze.stakem.net.messages.PongMessage;
+import nl.hanze.stakem.net.messages.RegisterMessage;
 
 import java.util.List;
 

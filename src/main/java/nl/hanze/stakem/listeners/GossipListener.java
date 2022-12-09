@@ -3,7 +3,7 @@ package nl.hanze.stakem.listeners;
 import nl.hanze.stakem.event.Event;
 import nl.hanze.stakem.event.Listener;
 import nl.hanze.stakem.event.events.GossipEvent;
-import nl.hanze.stakem.message.messages.GossipResultMessage;
+import nl.hanze.stakem.net.messages.GossipResultMessage;
 import nl.hanze.stakem.net.Client;
 
 import java.net.DatagramPacket;
@@ -19,7 +19,7 @@ public class GossipListener implements Listener {
         Client client = gossipEvent.getServer().getClient(address);
 
         System.out.println("Received gossip request from " + packet.getAddress().getHostAddress() + ":" + packet.getPort());
-        GossipResultMessage resultMessage = new GossipResultMessage(gossipEvent.getServer().getClients());
+        GossipResultMessage resultMessage = new GossipResultMessage(gossipEvent.getServer().getClientAddresses());
         client.sendMessage(resultMessage);
     }
 }

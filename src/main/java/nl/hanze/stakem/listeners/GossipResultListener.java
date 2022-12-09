@@ -3,11 +3,12 @@ package nl.hanze.stakem.listeners;
 import nl.hanze.stakem.event.Event;
 import nl.hanze.stakem.event.Listener;
 import nl.hanze.stakem.event.events.GossipResultEvent;
-import nl.hanze.stakem.message.MessageBody;
-import nl.hanze.stakem.message.messages.GossipResultMessage;
+import nl.hanze.stakem.net.MessageBody;
+import nl.hanze.stakem.net.messages.GossipResultMessage;
 import nl.hanze.stakem.net.Client;
 
 import java.net.DatagramPacket;
+import java.net.InetSocketAddress;
 
 public class GossipResultListener implements Listener {
 
@@ -19,9 +20,9 @@ public class GossipResultListener implements Listener {
         DatagramPacket packet = gossipResultEvent.getPacket();
 
         System.out.println("Received gossip result from " + packet.getAddress().getHostAddress() + ":" + packet.getPort());
-        for (Client client : resultMessage.getGossipResult()) {
-            System.out.println("Received client: " + client.getAddress().getHostString() + ":" + client.getAddress().getPort());
-            gossipResultEvent.getServer().addClient(client.getAddress());
+        for (InetSocketAddress clientAddress : resultMessage.getGossipResult()) {
+            System.out.println("Received client: " + clientAddress);
+            gossipResultEvent.getServer().addClient(clientAddress);
         }
     }
 }

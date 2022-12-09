@@ -6,8 +6,7 @@ import nl.hanze.stakem.Constants;
 import nl.hanze.stakem.event.Event;
 import nl.hanze.stakem.event.EventFactory;
 import nl.hanze.stakem.event.EventManager;
-import nl.hanze.stakem.message.Message;
-import nl.hanze.stakem.message.MessageBody;
+import nl.hanze.stakem.net.messages.RegisterMessage;
 
 import java.net.*;
 import java.util.*;
@@ -82,7 +81,7 @@ public class Server {
                         continue;
                     }
 
-                    Event event = EventFactory.getEvent(messageBody, packet);
+                    Event event = EventFactory.getEvent(this, messageBody, packet);
 
                     EventManager.getInstance().dispatchEvent(event);
                 } else {
@@ -97,6 +96,7 @@ public class Server {
     private void synchronizeBlockchain() {
         state = NodeState.SYNCING;
 
+        // TODO: implement
 
         state = NodeState.READY;
     }
@@ -104,6 +104,15 @@ public class Server {
     private void contactRootNode() {
         state = NodeState.STARTING;
 
+        Client client = createAndAddClient(new InetSocketAddress(Constants.ROOT_NODE_HOSTNAME, Constants.ROOT_NODE_PORT));
+
+        try {
+            client.sendMessage(new RegisterMessage());
+        } catch (Exception e) {
+            System.out.println("Failed to contact root node! Exiting...");
+            e.printStackTrace();
+            System.exit(1);
+        }
 
         synchronizeBlockchain();
     }
@@ -126,7 +135,7 @@ public class Server {
     public void close() {
         try {
             if (UPnP.isUPnPAvailable()) {
-                UPnP.closePortTCP(port);
+                UPnP.closePortUDP(port);
             }
 
             isStopping = true;
@@ -158,6 +167,10 @@ public class Server {
 
     public Collection<Client> getClients() {
         return clients.values();
+    }
+
+    public List<InetSocketAddress> getClientAddresses() {
+        return new ArrayList<>(clients.keySet());
     }
 
     public void removeClient(InetSocketAddress address) {

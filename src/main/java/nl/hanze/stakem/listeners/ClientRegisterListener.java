@@ -3,7 +3,7 @@ package nl.hanze.stakem.listeners;
 import nl.hanze.stakem.event.Event;
 import nl.hanze.stakem.event.Listener;
 import nl.hanze.stakem.event.events.ClientRegisterEvent;
-import nl.hanze.stakem.message.MessageBody;
+import nl.hanze.stakem.net.MessageBody;
 
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;

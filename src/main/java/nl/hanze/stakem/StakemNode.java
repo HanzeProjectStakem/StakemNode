@@ -1,12 +1,9 @@
 package nl.hanze.stakem;
 
 import nl.hanze.stakem.event.EventManager;
-import nl.hanze.stakem.event.events.ClientRegisterEvent;
-import nl.hanze.stakem.event.events.GossipEvent;
-import nl.hanze.stakem.event.events.PingEvent;
-import nl.hanze.stakem.event.events.PongEvent;
+import nl.hanze.stakem.event.events.*;
 import nl.hanze.stakem.listeners.*;
-import nl.hanze.stakem.message.Message;
+import nl.hanze.stakem.net.Message;
 import nl.hanze.stakem.net.Client;
 import nl.hanze.stakem.net.Server;
 
@@ -70,6 +67,6 @@ public class StakemNode {
         manager.registerListener(new PongListener(), PongEvent.class);
         manager.registerListener(new ClientRegisterListener(), ClientRegisterEvent.class);
         manager.registerListener(new GossipListener(), GossipEvent.class);
-        manager.registerListener(new GossipResultListener(), GossipEvent.class);
+        manager.registerListener(new GossipResultListener(), GossipResultEvent.class);
     }
 }

@@ -3,8 +3,8 @@ package nl.hanze.stakem.listeners;
 import nl.hanze.stakem.event.Event;
 import nl.hanze.stakem.event.Listener;
 import nl.hanze.stakem.event.events.PingEvent;
-import nl.hanze.stakem.message.Message;
-import nl.hanze.stakem.message.messages.PongMessage;
+import nl.hanze.stakem.net.Message;
+import nl.hanze.stakem.net.messages.PongMessage;
 import nl.hanze.stakem.net.Client;
 
 import java.net.DatagramPacket;

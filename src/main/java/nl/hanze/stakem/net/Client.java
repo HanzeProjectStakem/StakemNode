@@ -1,7 +1,5 @@
 package nl.hanze.stakem.net;
 
-import nl.hanze.stakem.message.Message;
-
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
