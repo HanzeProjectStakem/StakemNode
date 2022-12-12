@@ -1,4 +1,6 @@
-package nl.hanze.stakem.blockchain;
+package nl.hanze.stakem;
+
+import nl.hanze.stakem.Block;
 
 import java.util.LinkedList;
 
