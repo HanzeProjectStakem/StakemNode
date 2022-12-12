@@ -1,5 +1,7 @@
 package nl.hanze.stakem;
 
+import nl.hanze.stakem.Block;
+
 import java.util.LinkedList;
 
 public class Ledger {

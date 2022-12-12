@@ -7,11 +7,11 @@ import java.security.MessageDigest;
 
 public class Block {
 
-    private final Integer index;
-    private final String hash;
+    private Integer index;
+    private String hash;
     private final String previousHash;
     private final Long timeStamp;
-    private final List<Transaction> transactions;
+    private List<Transaction> transactions;
 
     public Block(int index, String previousHash, Long timeStamp, List<Transaction> transactions) {
         this.index = index;
@@ -21,11 +21,15 @@ public class Block {
         this.hash = generateHash();
     }
 
-    private String generateHash() {
-        String dataToHash = index
+    public String getPreviousHash() {
+        return this.previousHash;
+    }
+
+    public String generateHash() {
+        String dataToHash = Integer.toString(index)
                 + previousHash
-                + timeStamp
-                + transactions; // TODO: merkle tree gebruiken om hash te krijgen van transactions
+                + Long.toString(timeStamp)
+                + transactions.toString();
 
         byte[] bytes = null;
 
@@ -48,10 +52,6 @@ public class Block {
             hexString.append(hex);
         }
         return hexString.toString();
-    }
-
-    public String getPreviousHash() {
-        return this.previousHash;
     }
 
     public String getHash() {
