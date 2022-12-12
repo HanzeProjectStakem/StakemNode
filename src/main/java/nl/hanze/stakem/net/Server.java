@@ -1,22 +1,26 @@
 package nl.hanze.stakem.net;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simtechdata.waifupnp.UPnP;
 import nl.hanze.stakem.Constants;
-import nl.hanze.stakem.command.CommandFactory;
-import nl.hanze.stakem.command.CommandHandler;
+import nl.hanze.stakem.event.Event;
+import nl.hanze.stakem.event.EventFactory;
+import nl.hanze.stakem.event.EventManager;
+import nl.hanze.stakem.net.messages.RegisterMessage;
 
 import java.net.*;
 import java.util.*;
 
 public class Server {
 
-    private int port;
-    private ServerSocket serverSocket;
-    private boolean isRootNode = false;
     private final Random random = new Random();
-    private boolean isStopping = false;
-
     private final Map<InetSocketAddress, Client> clients = new HashMap<>();
+    private int port;
+    private DatagramSocket serverSocket;
+    private boolean isRootNode = false;
+    private boolean isStopping = false;
+    private NodeState state = NodeState.STARTING;
+    private Deque<DatagramPacket> packetQueue = new ArrayDeque<>();
 
     public Server(int port) {
         this.port = port;
@@ -31,19 +35,26 @@ public class Server {
         try {
             boolean uPnPAvailable = UPnP.isUPnPAvailable();
 
-            if (uPnPAvailable && UPnP.isMappedTCP(port)) {
+            if (uPnPAvailable && UPnP.isMappedUDP(port)) {
                 throw new ConnectException("Port is already mapped");
             }
 
-            serverSocket = new ServerSocket(port);
+            serverSocket = new DatagramSocket(port);
 
             if (uPnPAvailable) {
-                UPnP.openPortTCP(port);
+                UPnP.openPortUDP(port);
             }
 
             addShutdownHook();
             new Thread(this::listen).start();
-            contactRootNode();
+            new Thread(this::startQueueProcessThread).start();
+
+            if (!isRootNode) {
+                contactRootNode();
+            } else {
+                synchronizeBlockchain();
+            }
+
             System.out.println("Started a node at port " + port);
         } catch (ConnectException | BindException e) {
             System.out.println("Port " + port + " is in use, retrying with a different port...");
@@ -54,29 +65,67 @@ public class Server {
         }
     }
 
-    private void contactRootNode() {
-        if (isRootNode) {
-            return;
+    private void startQueueProcessThread() {
+        ObjectMapper mapper = new ObjectMapper();
+
+        while (!isStopping) {
+            try {
+                if (!packetQueue.isEmpty()) {
+                    DatagramPacket packet = packetQueue.pop();
+                    String jsonString = new String(packet.getData(), 0, packet.getLength());
+                    System.out.println("Received message: " + jsonString);
+                    MessageBody messageBody = mapper.readValue(jsonString, MessageBody.class);
+
+                    if (!messageBody.getVersion().equals(Constants.VERSION)) {
+                        System.out.println("Received a message with an incompatible version, ignoring...");
+                        continue;
+                    }
+
+                    Event event = EventFactory.getEvent(this, messageBody, packet);
+
+                    EventManager.getInstance().dispatchEvent(event);
+                } else {
+                    Thread.sleep(100);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+    }
+
+    private void synchronizeBlockchain() {
+        state = NodeState.SYNCING;
+
+        // TODO: implement
+
+        state = NodeState.READY;
+    }
+
+    private void contactRootNode() {
+        state = NodeState.STARTING;
 
         Client client = createAndAddClient(new InetSocketAddress(Constants.ROOT_NODE_HOSTNAME, Constants.ROOT_NODE_PORT));
 
         try {
-            client.sendCommand(CommandFactory.getCommand("register"));
+            client.sendMessage(new RegisterMessage());
         } catch (Exception e) {
             System.out.println("Failed to contact root node! Exiting...");
             e.printStackTrace();
             System.exit(1);
         }
+
+        synchronizeBlockchain();
     }
 
     public void listen() {
+        byte[] buffer = new byte[1024];
+
         while (!isStopping) {
             try {
-                Socket socket = serverSocket.accept();
-                CommandHandler handler = new CommandHandler(this, socket);
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                serverSocket.receive(packet);
 
-                handler.handle();
+                packetQueue.add(packet);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -86,7 +135,7 @@ public class Server {
     public void close() {
         try {
             if (UPnP.isUPnPAvailable()) {
-                UPnP.closePortTCP(port);
+                UPnP.closePortUDP(port);
             }
 
             isStopping = true;
@@ -112,8 +161,16 @@ public class Server {
         }
     }
 
+    public Client getClient(InetSocketAddress address) {
+        return clients.get(address);
+    }
+
     public Collection<Client> getClients() {
         return clients.values();
+    }
+
+    public List<InetSocketAddress> getClientAddresses() {
+        return new ArrayList<>(clients.keySet());
     }
 
     public void removeClient(InetSocketAddress address) {
@@ -126,5 +183,23 @@ public class Server {
 
     public int getPort() {
         return port;
+    }
+
+    public NodeState getState() {
+        return state;
+    }
+
+    public void sendMessage(Message message, InetSocketAddress address) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            MessageBody body = new MessageBody(message, this);
+            byte[] payload = mapper.writeValueAsBytes(body);
+
+            DatagramPacket packet = new DatagramPacket(payload, payload.length, address);
+            serverSocket.send(packet);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
     }
 }
