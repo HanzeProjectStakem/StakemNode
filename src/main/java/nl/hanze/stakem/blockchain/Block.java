@@ -1,25 +1,30 @@
 package nl.hanze.stakem.blockchain;
 
-import com.google.gson.JsonObject;
-
 public class Block {
 
     private int index;
     private String hash;
-    private String previousHash;
-    private JsonObject[] transactions;
-    private Long timeStamp;
+    private final String previousHash;
+    private final Long timeStamp;
+    private List<Transaction> transactions;
 
-    public Block(JsonObject transaction, String previousHash) {
-//        this.data = data;
-//        this.previousHash = previousHash;
-//        this.timeStamp = System.currentTimeMillis();
-//        this.hash = calculateHash();
+    public Block(int index, String previousHash, Long timeStamp, List<Transaction> transactions) {
+        this.index = index;
+        this.previousHash = previousHash;
+        this.timeStamp = timeStamp;
+        this.transactions = transactions;
+        this.hash = generateHash();
     }
 
     public String getPreviousHash() {
         return this.previousHash;
     }
+
+    public String generateHash() {
+        // TODO: Generate hash
+        return "";
+    }
+
 
     public String getHash() {
         return this.hash;
