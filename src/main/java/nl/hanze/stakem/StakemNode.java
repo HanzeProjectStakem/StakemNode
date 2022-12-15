@@ -6,14 +6,25 @@ import nl.hanze.stakem.listeners.*;
 import nl.hanze.stakem.net.Message;
 import nl.hanze.stakem.net.Client;
 import nl.hanze.stakem.net.Server;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 
 import java.util.List;
 import java.util.Scanner;
 
-public class StakemNode {
+@SpringBootApplication
+class StakemNodeApplication {
 
-    public static void main(String[] args) {
-        boolean isRootNode = args.length > 0 && args[0].equalsIgnoreCase("root");
+    @Autowired
+    private ApplicationArguments args;
+
+    @EventListener(ApplicationReadyEvent.class)
+    public void onReady() {
+        boolean isRootNode = args.getSourceArgs().length > 0 && args.getSourceArgs()[0].equals("root");
         Server server = new Server(Constants.DEFAULT_PORT, isRootNode);
 
         if (isRootNode) {
@@ -68,5 +79,11 @@ public class StakemNode {
         manager.registerListener(new ClientRegisterListener(), ClientRegisterEvent.class);
         manager.registerListener(new GossipListener(), GossipEvent.class);
         manager.registerListener(new GossipResultListener(), GossipResultEvent.class);
+    }
+}
+
+public class StakemNode {
+    public static void main(String[] args) {
+        SpringApplication.run(StakemNodeApplication.class, args);
     }
 }
