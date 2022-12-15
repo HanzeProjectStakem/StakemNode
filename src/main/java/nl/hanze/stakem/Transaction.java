@@ -3,20 +3,21 @@ package nl.hanze.stakem;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.Signature;
 
 public class Transaction {
 
     private final Integer version;
     private final Integer index;
-    private final String sender;
-    private final String recipient;
+    private final PublicKey sender;
+    private final PublicKey recipient;
     private final Integer amount;
     private final Long timeStamp;
     private final Signature signature;
     private final String hash;
 
-    public Transaction(Integer version, Integer index, String sender, String recipient, Integer amount, Long timeStamp, Signature signature) {
+    public Transaction(Integer version, Integer index, PublicKey sender, PublicKey recipient, Integer amount, Long timeStamp, Signature signature) {
         this.index = index;
         this.version = version;
         this.timeStamp = timeStamp;
@@ -34,8 +35,8 @@ public class Transaction {
     private String generateHash() {
         String dataToHash = version
                 + index
-                + sender
-                + recipient
+                + sender.toString()
+                + recipient.toString()
                 + amount
                 + timeStamp
                 + signature;
