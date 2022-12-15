@@ -8,6 +8,7 @@ import java.security.Signature;
 public class Transaction {
 
     private final Integer version;
+    private final Integer index;
     private final String sender;
     private final String recipient;
     private final Integer amount;
@@ -15,7 +16,8 @@ public class Transaction {
     private final Signature signature;
     private final String hash;
 
-    public Transaction(Integer version, String sender, String recipient, Integer amount, Long timeStamp, Signature signature) {
+    public Transaction(Integer version, Integer index, String sender, String recipient, Integer amount, Long timeStamp, Signature signature) {
+        this.index = index;
         this.version = version;
         this.timeStamp = timeStamp;
         this.signature = signature;
@@ -31,6 +33,7 @@ public class Transaction {
 
     private String generateHash() {
         String dataToHash = version
+                + index
                 + sender
                 + recipient
                 + amount
