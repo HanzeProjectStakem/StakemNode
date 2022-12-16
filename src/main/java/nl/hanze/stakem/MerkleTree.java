@@ -74,15 +74,4 @@ public class MerkleTree {
             }
         }
     }
-
-    public static void main(String[] args) {
-        ArrayList<String> datablocks = new ArrayList<>();
-        datablocks.add("Hello");
-        datablocks.add("World");
-        datablocks.add("Hey");
-        datablocks.add("hi");
-
-        Node root = generateTree(datablocks);
-        printLevelOrderTraversal(root);
-    }
 }
