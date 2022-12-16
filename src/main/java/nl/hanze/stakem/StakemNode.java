@@ -48,23 +48,18 @@ class StakemNodeApplication {
                 String messageStr = input.split(" ")[0];
                 int argsLength = input.split(" ").length - 1;
 
-                if (messageStr.equals("list")) {
-                    System.out.println("Clients:");
-                    for (Client client : server.getClients()) {
+                for (Client client : server.getClients()) {
+                    if (messageStr.equals("list")) {
                         System.out.println(client);
-                    }
-                } else {
-                    for (Client client : server.getClients()) {
-                        if (argsLength > 0) {
-                            List<String> messageArgs = List.of(input.substring(messageStr.length() + 1));
-                            Message message = MessageFactory.getMessage(messageStr, messageArgs);
+                    } else if (argsLength > 0) {
+                        List<String> messageArgs = List.of(input.substring(messageStr.length() + 1));
+                        Message message = MessageFactory.getMessage(messageStr, messageArgs);
 
-                            client.sendMessage(message);
-                        } else {
-                            Message message = MessageFactory.getMessage(messageStr);
+                        client.sendMessage(message);
+                    } else {
+                        Message message = MessageFactory.getMessage(messageStr);
 
-                            client.sendMessage(message);
-                        }
+                        client.sendMessage(message);
                     }
                 }
             } catch (Exception e) {
