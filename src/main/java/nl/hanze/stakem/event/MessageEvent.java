@@ -7,7 +7,7 @@ import org.springframework.context.ApplicationEvent;
 
 import java.net.DatagramPacket;
 
-public class MessageEvent<T extends Message> extends ApplicationEvent {
+public abstract class MessageEvent<T extends Message> extends ApplicationEvent {
 
     private final T message;
     private final DatagramPacket packet;
