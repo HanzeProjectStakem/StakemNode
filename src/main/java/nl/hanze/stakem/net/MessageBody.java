@@ -1,7 +1,5 @@
 package nl.hanze.stakem.net;
 
-import nl.hanze.stakem.Constants;
-
 import java.time.Instant;
 
 public class MessageBody {
@@ -15,14 +13,14 @@ public class MessageBody {
     private Message message;
 
     public MessageBody() {
-        this.version = Constants.VERSION;
+        this.version = "";
         this.serverPort = -1;
         this.timestamp = Instant.now().toEpochMilli();
         this.message = null;
     }
 
-    public MessageBody(Message message, Server server) {
-        this.version = Constants.VERSION;
+    public MessageBody(String version, Message message, Server server) {
+        this.version = version;
         this.message = message;
         this.timestamp = Instant.now().toEpochMilli();
         this.serverPort = server.getPort();
