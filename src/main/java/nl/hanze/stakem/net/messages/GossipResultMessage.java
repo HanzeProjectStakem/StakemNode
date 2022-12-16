@@ -1,11 +1,9 @@
 package nl.hanze.stakem.net.messages;
 
 import nl.hanze.stakem.net.Message;
-import nl.hanze.stakem.net.Client;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public class GossipResultMessage implements Message {
