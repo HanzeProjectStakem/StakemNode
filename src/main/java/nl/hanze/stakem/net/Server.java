@@ -2,7 +2,7 @@ package nl.hanze.stakem.net;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simtechdata.waifupnp.UPnP;
-import nl.hanze.stakem.Constants;
+import nl.hanze.stakem.config.NodeConfig;
 import nl.hanze.stakem.event.MessageEventPublisher;
 import nl.hanze.stakem.net.messages.RegisterMessage;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,10 +12,12 @@ import java.util.*;
 
 public class Server {
 
+    // TODO: could probably use some cleanup. Maybe put in a separate class (NodeContext or something)?
     private final Random random = new Random();
     private final Map<InetSocketAddress, Client> clients = new HashMap<>();
     private final Deque<DatagramPacket> packetQueue = new ArrayDeque<>();
     private MessageEventPublisher messageEventPublisher;
+    private NodeConfig nodeConfig;
     private int port;
     private DatagramSocket serverSocket;
     private boolean isRootNode = false;
@@ -34,6 +36,11 @@ public class Server {
     @Autowired
     public void setMessageEventPublisher(MessageEventPublisher messageEventPublisher) {
         this.messageEventPublisher = messageEventPublisher;
+    }
+
+    @Autowired
+    public void setNodeConfig(NodeConfig nodeConfig) {
+        this.nodeConfig = nodeConfig;
     }
 
     public boolean isRootNode() {
@@ -67,7 +74,7 @@ public class Server {
             System.out.println("Started a node at port " + port);
         } catch (ConnectException | BindException e) {
             System.out.println("Port " + port + " is in use, retrying with a different port...");
-            port = random.nextInt(Constants.RANDOM_PORT_RANGE_START, Constants.RANDOM_PORT_RANGE_END);
+            port = random.nextInt(nodeConfig.getRandomPortRangeStart(), nodeConfig.getRandomPortRangeEnd());
             start();
         } catch (Exception e) {
             e.printStackTrace();
@@ -85,7 +92,7 @@ public class Server {
                     System.out.println("Received message: " + jsonString);
                     MessageBody messageBody = mapper.readValue(jsonString, MessageBody.class);
 
-                    if (!messageBody.getVersion().equals(Constants.VERSION)) {
+                    if (!messageBody.getVersion().equals(nodeConfig.getProtocolVersion())) {
                         System.out.println("Received a message with an incompatible version, ignoring...");
                         continue;
                     }
@@ -111,7 +118,7 @@ public class Server {
     private void contactRootNode() {
         state = NodeState.STARTING;
 
-        Client client = createAndAddClient(new InetSocketAddress(Constants.ROOT_NODE_HOSTNAME, Constants.ROOT_NODE_PORT));
+        Client client = createAndAddClient(new InetSocketAddress(nodeConfig.getRootNodeHostname(), nodeConfig.getRootNodePort()));
 
         try {
             client.sendMessage(new RegisterMessage());
@@ -199,7 +206,7 @@ public class Server {
     public void sendMessage(Message message, InetSocketAddress address) {
         try {
             ObjectMapper mapper = new ObjectMapper();
-            MessageBody body = new MessageBody(message, this);
+            MessageBody body = new MessageBody(nodeConfig.getProtocolVersion(), message, this);
             byte[] payload = mapper.writeValueAsBytes(body);
 
             DatagramPacket packet = new DatagramPacket(payload, payload.length, address);

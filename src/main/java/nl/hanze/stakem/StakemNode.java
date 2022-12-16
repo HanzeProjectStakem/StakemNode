@@ -1,5 +1,6 @@
 package nl.hanze.stakem;
 
+import nl.hanze.stakem.config.NodeConfig;
 import nl.hanze.stakem.net.Client;
 import nl.hanze.stakem.net.Message;
 import nl.hanze.stakem.net.Server;
@@ -8,6 +9,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
@@ -16,7 +18,11 @@ import java.util.List;
 import java.util.Scanner;
 
 @SpringBootApplication
+@ConfigurationPropertiesScan("nl.hanze.stakem.config")
 class StakemNodeApplication {
+
+    @Autowired
+    private NodeConfig nodeConfig;
 
     @Autowired
     private ApplicationArguments args;
@@ -71,7 +77,7 @@ class StakemNodeApplication {
     public Server server() {
         boolean isRootNode = args.getSourceArgs().length > 0 && args.getSourceArgs()[0].equals("root");
 
-        return new Server(Constants.DEFAULT_PORT, isRootNode);
+        return new Server(nodeConfig.getDefaultNodePort(), isRootNode);
     }
 }
 
