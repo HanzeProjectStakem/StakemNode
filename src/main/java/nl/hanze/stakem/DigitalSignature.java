@@ -1,4 +1,5 @@
 package nl.hanze.stakem;
+
 import com.google.gson.JsonObject;
 
 import java.nio.charset.StandardCharsets;
@@ -15,11 +16,10 @@ public class DigitalSignature {
      *
      * @param obj The JsonObject containing the transaction data and the digital signature.
      * @return true if the digital signature is valid, false otherwise.
-     *
      * @throws NoSuchAlgorithmException if the algorithm is not available.
-     * @throws InvalidKeySpecException if the key specification is invalid.
-     * @throws InvalidKeyException if the key is invalid.
-     * @throws SignatureException if the signature is invalid.
+     * @throws InvalidKeySpecException  if the key specification is invalid.
+     * @throws InvalidKeyException      if the key is invalid.
+     * @throws SignatureException       if the signature is invalid.
      */
     public boolean isValid(JsonObject obj) throws NoSuchAlgorithmException, InvalidKeySpecException, InvalidKeyException, SignatureException {
         Signature ecdsaVerify = Signature.getInstance(obj.get("algorithm").getAsString());

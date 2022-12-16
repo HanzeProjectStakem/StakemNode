@@ -3,10 +3,9 @@ package nl.hanze.stakem.net;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simtechdata.waifupnp.UPnP;
 import nl.hanze.stakem.Constants;
-import nl.hanze.stakem.event.Event;
-import nl.hanze.stakem.event.EventFactory;
-import nl.hanze.stakem.event.EventManager;
+import nl.hanze.stakem.event.MessageEventPublisher;
 import nl.hanze.stakem.net.messages.RegisterMessage;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.*;
 import java.util.*;
@@ -15,12 +14,13 @@ public class Server {
 
     private final Random random = new Random();
     private final Map<InetSocketAddress, Client> clients = new HashMap<>();
+    private final Deque<DatagramPacket> packetQueue = new ArrayDeque<>();
+    private MessageEventPublisher messageEventPublisher;
     private int port;
     private DatagramSocket serverSocket;
     private boolean isRootNode = false;
     private boolean isStopping = false;
     private NodeState state = NodeState.STARTING;
-    private Deque<DatagramPacket> packetQueue = new ArrayDeque<>();
 
     public Server(int port) {
         this.port = port;
@@ -29,6 +29,15 @@ public class Server {
     public Server(int port, boolean isRootNode) {
         this.port = port;
         this.isRootNode = isRootNode;
+    }
+
+    @Autowired
+    public void setMessageEventPublisher(MessageEventPublisher messageEventPublisher) {
+        this.messageEventPublisher = messageEventPublisher;
+    }
+
+    public boolean isRootNode() {
+        return isRootNode;
     }
 
     public void start() {
@@ -81,9 +90,7 @@ public class Server {
                         continue;
                     }
 
-                    Event event = EventFactory.getEvent(this, messageBody, packet);
-
-                    EventManager.getInstance().dispatchEvent(event);
+                    messageEventPublisher.publishEvent(this, messageBody, packet);
                 } else {
                     Thread.sleep(100);
                 }
