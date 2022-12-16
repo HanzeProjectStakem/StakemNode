@@ -1,0 +1,6 @@
+protocolVersion: "0.1"
+defaultNodePort: 52145
+randomPortRangeStart: 49152
+randomPortRangeEnd: 65535
+rootNodeHostname: "94.212.83.107"
+rootNodePort: 52145

@@ -1,22 +1,28 @@
 package nl.hanze.stakem.net;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.simtechdata.waifupnp.UPnP;
-import nl.hanze.stakem.Constants;
-import nl.hanze.stakem.command.CommandFactory;
-import nl.hanze.stakem.command.CommandHandler;
+import nl.hanze.stakem.config.NodeConfig;
+import nl.hanze.stakem.event.MessageEventPublisher;
+import nl.hanze.stakem.net.messages.RegisterMessage;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.*;
 import java.util.*;
 
 public class Server {
 
-    private int port;
-    private ServerSocket serverSocket;
-    private boolean isRootNode = false;
+    // TODO: could probably use some cleanup. Maybe put in a separate class (NodeContext or something)?
     private final Random random = new Random();
-    private boolean isStopping = false;
-
     private final Map<InetSocketAddress, Client> clients = new HashMap<>();
+    private final Deque<DatagramPacket> packetQueue = new ArrayDeque<>();
+    private MessageEventPublisher messageEventPublisher;
+    private NodeConfig nodeConfig;
+    private int port;
+    private DatagramSocket serverSocket;
+    private boolean isRootNode = false;
+    private boolean isStopping = false;
+    private NodeState state = NodeState.STARTING;
 
     public Server(int port) {
         this.port = port;
@@ -27,56 +33,113 @@ public class Server {
         this.isRootNode = isRootNode;
     }
 
+    @Autowired
+    public void setMessageEventPublisher(MessageEventPublisher messageEventPublisher) {
+        this.messageEventPublisher = messageEventPublisher;
+    }
+
+    @Autowired
+    public void setNodeConfig(NodeConfig nodeConfig) {
+        this.nodeConfig = nodeConfig;
+    }
+
+    public boolean isRootNode() {
+        return isRootNode;
+    }
+
     public void start() {
         try {
             boolean uPnPAvailable = UPnP.isUPnPAvailable();
 
-            if (uPnPAvailable && UPnP.isMappedTCP(port)) {
+            if (uPnPAvailable && UPnP.isMappedUDP(port)) {
                 throw new ConnectException("Port is already mapped");
             }
 
-            serverSocket = new ServerSocket(port);
+            serverSocket = new DatagramSocket(port);
 
             if (uPnPAvailable) {
-                UPnP.openPortTCP(port);
+                UPnP.openPortUDP(port);
             }
 
             addShutdownHook();
             new Thread(this::listen).start();
-            contactRootNode();
+            new Thread(this::startQueueProcessThread).start();
+
+            if (!isRootNode) {
+                contactRootNode();
+            } else {
+                synchronizeBlockchain();
+            }
+
             System.out.println("Started a node at port " + port);
         } catch (ConnectException | BindException e) {
             System.out.println("Port " + port + " is in use, retrying with a different port...");
-            port = random.nextInt(Constants.RANDOM_PORT_RANGE_START, Constants.RANDOM_PORT_RANGE_END);
+            port = random.nextInt(nodeConfig.getRandomPortRangeStart(), nodeConfig.getRandomPortRangeEnd());
             start();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void contactRootNode() {
-        if (isRootNode) {
-            return;
-        }
+    private void startQueueProcessThread() {
+        ObjectMapper mapper = new ObjectMapper();
 
-        Client client = createAndAddClient(new InetSocketAddress(Constants.ROOT_NODE_HOSTNAME, Constants.ROOT_NODE_PORT));
+        while (!isStopping) {
+            try {
+                if (!packetQueue.isEmpty()) {
+                    DatagramPacket packet = packetQueue.pop();
+                    String jsonString = new String(packet.getData(), 0, packet.getLength());
+                    System.out.println("Received message: " + jsonString);
+                    MessageBody messageBody = mapper.readValue(jsonString, MessageBody.class);
+
+                    if (!messageBody.getVersion().equals(nodeConfig.getProtocolVersion())) {
+                        System.out.println("Received a message with an incompatible version, ignoring...");
+                        continue;
+                    }
+
+                    messageEventPublisher.publishEvent(this, messageBody, packet);
+                } else {
+                    Thread.sleep(100);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void synchronizeBlockchain() {
+        state = NodeState.SYNCING;
+
+        // TODO: implement
+
+        state = NodeState.READY;
+    }
+
+    private void contactRootNode() {
+        state = NodeState.STARTING;
+
+        Client client = createAndAddClient(new InetSocketAddress(nodeConfig.getRootNodeHostname(), nodeConfig.getRootNodePort()));
 
         try {
-            client.sendCommand(CommandFactory.getCommand("register"));
+            client.sendMessage(new RegisterMessage());
         } catch (Exception e) {
             System.out.println("Failed to contact root node! Exiting...");
             e.printStackTrace();
             System.exit(1);
         }
+
+        synchronizeBlockchain();
     }
 
     public void listen() {
+        byte[] buffer = new byte[1024];
+
         while (!isStopping) {
             try {
-                Socket socket = serverSocket.accept();
-                CommandHandler handler = new CommandHandler(this, socket);
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+                serverSocket.receive(packet);
 
-                handler.handle();
+                packetQueue.add(packet);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -86,7 +149,7 @@ public class Server {
     public void close() {
         try {
             if (UPnP.isUPnPAvailable()) {
-                UPnP.closePortTCP(port);
+                UPnP.closePortUDP(port);
             }
 
             isStopping = true;
@@ -112,8 +175,16 @@ public class Server {
         }
     }
 
+    public Client getClient(InetSocketAddress address) {
+        return clients.get(address);
+    }
+
     public Collection<Client> getClients() {
         return clients.values();
+    }
+
+    public List<InetSocketAddress> getClientAddresses() {
+        return new ArrayList<>(clients.keySet());
     }
 
     public void removeClient(InetSocketAddress address) {
@@ -126,5 +197,23 @@ public class Server {
 
     public int getPort() {
         return port;
+    }
+
+    public NodeState getState() {
+        return state;
+    }
+
+    public void sendMessage(Message message, InetSocketAddress address) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            MessageBody body = new MessageBody(nodeConfig.getProtocolVersion(), message, this);
+            byte[] payload = mapper.writeValueAsBytes(body);
+
+            DatagramPacket packet = new DatagramPacket(payload, payload.length, address);
+            serverSocket.send(packet);
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
     }
 }
